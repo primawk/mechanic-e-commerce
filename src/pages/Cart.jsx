@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import Axios from "axios";
 import { API_URL } from "../constants/API";
 import { getCartData } from "../redux/actions/cart";
-import { Alert } from "react-bootstrap";
+import { Alert, Modal, Button } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.css";
 import { Navigate } from "react-router-dom";
 
@@ -16,6 +16,8 @@ class Cart extends React.Component {
     duitKurang: false,
     changes: false,
     paid: false,
+    errMsg: "",
+    successMsg: "",
   };
 
   idrFormatter = (val) => {
@@ -26,17 +28,19 @@ class Cart extends React.Component {
   };
 
   deleteCartHandler = (id) => {
-    Axios.delete(`${API_URL}/carts/${id}`)
-      .then(() => {
-        this.props.getCartData(this.props.userGlobal.id);
-      })
-      .catch(() => {
-        alert("Error occurred");
-      });
+    Axios.delete(`${API_URL}/carts/${id}`).then(() => {
+      this.props.getCartData(this.props.userGlobal.id);
+    });
+  };
+
+  componentDidMount = () => {
+    this.props.getCartData(this.props.userGlobal.id); // auto - refresh to get rescpective user
   };
 
   renderCart = () => {
     return this.props.cartGlobal.cartList.map((val) => {
+      // if (val.userId === this.props.userGlobal.id)
+      // cart for respective user
       return (
         <tr>
           <td className="align-middle">{val.productName}</td>
@@ -88,25 +92,37 @@ class Cart extends React.Component {
     this.setState({ [name]: value });
   };
 
-  renderMargin = () => {
-    let margin = 0;
-    return (margin = Math.abs(this.renderTotalPrice() - this.state.payment));
-  };
-
   payBtnHandler = () => {
     // 1. Post to transaction
     // 2. Delete all cart that have been paid
-    const margin = this.idrFormatter(
-      Math.abs(this.renderTotalPrice() - this.state.payment)
-    );
+    // const margin = Math.abs(this.renderTotalPrice() - this.state.payment);
+    // this.setState({ margin: margin });
     if (this.state.payment < this.renderTotalPrice()) {
-      this.setState({ duitKurang: true, payment: 0 });
-      return;
+      this.setState({
+        duitKurang: true,
+        errMsg: `You have insufficient funds of
+      ${this.idrFormatter(
+        Math.abs(this.renderTotalPrice() - this.state.payment)
+      )}`,
+      });
+
+      return; // stop the code if true
     }
     if (this.state.payment > this.renderTotalPrice()) {
-      this.setState({ changes: true, payment: 0 });
-    } else if (this.state.payment === this.renderTotalPrice()) {
-      this.setState({ paid: true, payment: 0 });
+      this.setState({
+        changes: true,
+        successMsg: `Success! here are your changes
+      ${this.idrFormatter(
+        Math.abs(this.renderTotalPrice() - this.state.payment)
+      )}`,
+        duitKurang: false,
+      });
+    } else if (this.state.payment == this.renderTotalPrice()) {
+      this.setState({
+        paid: true,
+        successMsg: "Thank you, your order is being processed!",
+        duitKurang: false,
+      });
     }
     const d = new Date();
     Axios.post(`${API_URL}/transactions`, {
@@ -120,8 +136,7 @@ class Cart extends React.Component {
     })
       .then((result) => {
         // alert("Thank you, your order is being processed!");
-        this.setState({ paid: true });
-        this.setState({ payment: 0 });
+        // this.setState({ paid: true });
         result.data.transactionItems.forEach((val) => {
           this.deleteCartHandler(val.id);
         });
@@ -134,12 +149,39 @@ class Cart extends React.Component {
   render() {
     // Page Restriction
     if (this.props.userGlobal.id == 0) {
-      alert("resctricted");
       return <Navigate to="/" />;
     }
     return (
       <div className="p-5 text-center">
         <h1>Cart</h1>
+        <Modal
+          show={this.state.paid}
+          size="lg"
+          aria-labelledby="contained-modal-title-vcenter"
+          centered
+        >
+          <Modal.Body>
+            <h4>Hi! {this.props.userGlobal.username}</h4>
+            <p>{this.state.successMsg}</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button href="/">Close</Button>
+          </Modal.Footer>
+        </Modal>
+        <Modal
+          show={this.state.changes}
+          size="lg"
+          aria-labelledby="contained-modal-title-vcenter"
+          centered
+        >
+          <Modal.Body>
+            <h4>Hi, {this.props.userGlobal.username}</h4>
+            <p>{this.state.successMsg}</p>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button href="/">Close</Button>
+          </Modal.Footer>
+        </Modal>
         <div className="row mt-5">
           <div className="col-9 text-center">
             <table className="table">
@@ -227,25 +269,7 @@ class Cart extends React.Component {
                       onClose={this.closeAlert}
                       dismissible={this.closeAlert}
                     >
-                      You have insufficient funds of{" "}
-                      {this.idrFormatter(this.renderMargin())}
-                    </Alert>
-                    <Alert
-                      show={this.state.changes}
-                      variant="success"
-                      onClose={this.closeAlert}
-                      dismissible={this.closeAlert}
-                    >
-                      Success! here are your changes{" "}
-                      {this.idrFormatter(this.renderMargin())}
-                    </Alert>
-                    <Alert
-                      show={this.state.paid}
-                      variant="success"
-                      onClose={this.closeAlert}
-                      dismissible={this.closeAlert}
-                    >
-                      Thank you, your order is being processed!
+                      {this.state.errMsg}
                     </Alert>
                   </div>
                 </div>

@@ -1,0 +1,13 @@
+.blog {
+  background-color: rgb(0, 0, 0);
+  height: 476px;
+}
+
+.blog-post {
+  height: 400px;
+  width: 852px;
+
+  background-size: cover;
+  display: flex;
+  position: center;
+}

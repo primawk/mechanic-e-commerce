@@ -8,6 +8,11 @@ import { Navigate } from "react-router-dom";
 class Admin extends React.Component {
   state = {
     productList: [],
+    filteredProductList: [],
+    sortBy: "",
+    searchArtist: "",
+    searchGenre: "",
+    searchCountry: "",
     addAlbum: "",
     addPrice: 0,
     addPhoto: "",
@@ -27,6 +32,23 @@ class Admin extends React.Component {
     editReleased: "",
   };
 
+  searchBtnHandler = () => {
+    const filteredProductList = this.state.productList.filter((val) => {
+      return (
+        val.artist
+          .toLowerCase()
+          .includes(this.state.searchArtist.toLowerCase()) &&
+        val.genre
+          .toLowerCase()
+          .includes(this.state.searchGenre.toLowerCase()) &&
+        val.country
+          .toLowerCase()
+          .includes(this.state.searchCountry.toLowerCase()) // bug
+      );
+    });
+    this.setState({ filteredProductList });
+  };
+
   idrFormatter = (val) => {
     return Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -36,8 +58,12 @@ class Admin extends React.Component {
 
   fetchProducts = () => {
     Axios.get(`${API_URL}/products`).then((result) => {
-      this.setState({ productList: result.data });
+      this.setState({
+        productList: result.data, // search feature
+        filteredProductList: result.data, // search feature
+      });
     });
+    console.log(this.state.sortBy);
   };
 
   editToggle = (editData) => {
@@ -54,8 +80,6 @@ class Admin extends React.Component {
     });
   };
 
-
-
   cancelEdit = () => {
     this.setState({ editId: 0 });
   };
@@ -71,32 +95,63 @@ class Admin extends React.Component {
       country: this.state.editCountry,
       released: this.state.editReleased,
     })
-    .then(() => {
-      this.fetchProducts()
-      this.cancelEdit();
-    })
-    .catch(() => {
-      alert("Terjadi kesalahan")
-    })
-  }
+      .then(() => {
+        this.fetchProducts();
+        this.cancelEdit();
+      })
+      .catch(() => {
+        alert("Terjadi kesalahan");
+      });
+  };
 
   deleteBtnHandler = (deleteId) => {
     const confirmDelete = window.confirm("Are you sure?");
     if (confirmDelete) {
       Axios.delete(`${API_URL}/products/${deleteId}`)
-      .then(() => {
-        this.fetchProducts();
-      })
-      .catch(() => {
-        alert("Error!")
-      })
+        .then(() => {
+          this.fetchProducts();
+        })
+        .catch(() => {
+          alert("Error!");
+        });
     } else {
       alert("Cancelled");
     }
-  }
+  };
 
   renderProducts = () => {
-    return this.state.productList.map((val) => {
+    let rawData = [...this.state.filteredProductList]; // sorting feature
+    // sorting alphabetically
+    const compareString = (a, b) => {
+      if (a.album < b.album) {
+        return -1;
+      }
+
+      if (a.album > b.album) {
+        return 1;
+      }
+
+      return 0;
+    };
+    switch (this.state.sortBy) {
+      case "lowPrice":
+        rawData.sort((a, b) => a.price - b.price);
+        break;
+      case "highPrice":
+        rawData.sort((a, b) => b.price - a.price);
+        break;
+      case "az":
+        rawData.sort(compareString);
+        break;
+      case "za":
+        rawData.sort((a, b) => compareString(b, a));
+        break;
+      default:
+        rawData = [...this.state.filteredProductList];
+        break;
+    }
+
+    return rawData.map((val) => {
       if (val.id === this.state.editId) {
         return (
           <tr>
@@ -217,7 +272,12 @@ class Admin extends React.Component {
             </button>
           </td>
           <td>
-            <button onClick={() => this.deleteBtnHandler(val.id)} className="btn btn-danger">Delete</button>
+            <button
+              onClick={() => this.deleteBtnHandler(val.id)}
+              className="btn btn-danger"
+            >
+              Delete
+            </button>
           </td>
         </tr>
       );
@@ -265,13 +325,118 @@ class Admin extends React.Component {
   render() {
     if (this.props.userGlobal.role !== "admin") {
       return <Navigate to="/" />;
-    }
+    } // restrictipn page
 
     return (
       <div className="p-5">
         <div className="row">
           <div className="col-12 text-center">
             <h1>Manage Products</h1>
+            <thead>
+              <tr>
+                {/* <td> */}
+                {/* <input
+                    value={this.state.addAlbum}
+                    onChange={this.inputHandler}
+                    name="addAlbum"
+                    type="text"
+                    placeholder="Album"
+                    className="form-control"
+                  />
+                </td>
+                <td>
+                  <input
+                    value={this.state.addPrice}
+                    onChange={this.inputHandler}
+                    name="addPrice"
+                    placeholder="Price"
+                    type="text"
+                    className="form-control"
+                  />
+                </td> */}
+                <td>
+                  <input
+                    value={this.state.searchArtist}
+                    onChange={this.inputHandler}
+                    name="searchArtist"
+                    type="text"
+                    placeholder="Artist"
+                    className="form-control"
+                  />
+                </td>
+                {/* <td>
+                  <input
+                    value={this.state.searchGenre}
+                    onChange={this.inputHandler}
+                    name="searchGenre"
+                    type="text"
+                    placeholder="Genre"
+                    className="form-control"
+                  />
+                </td> */}
+                <select
+                  onChange={this.inputHandler}
+                  name="searchGenre"
+                  className="form-control"
+                >
+                  <option value="">Genre</option>
+                  <option value="Rock">Rock</option>
+                  <option value="Hip Hop">Hip Hop</option>
+                  <option value="Electronic">Electronic</option>
+                  <option value="Pop">Pop</option>
+                  <option value="Funk">Funk</option>
+                  <option value="Jazz">Jazz</option>
+                  <option value="Soul">Soul</option>
+                </select>
+
+                {/* <td>
+                  <input
+                    value={this.state.addLabel}
+                    onChange={this.inputHandler}
+                    name="addLabel"
+                    type="text"
+                    placeholder="Label"
+                    className="form-control"
+                  />
+                </td>  */}
+                <td>
+                  <select
+                    onChange={this.inputHandler}
+                    name="searchCountry"
+                    className="form-control"
+                  >
+                    <option value="">Countries</option>
+                    <option value="US">USA</option>
+                    <option value="UK">UK</option>
+                    <option value="AUS">AUS</option>
+                    <option value="Indonesia">Indonesia</option>
+                    <option value="New Zealand">New Zealand</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    onChange={this.inputHandler}
+                    name="sortBy"
+                    className="form-control"
+                  >
+                    <option value="">Sort by</option>
+                    <option value="lowPrice">Lowest Price</option>
+                    <option value="highPrice">Highest Price</option>
+                    <option value="az">A-Z</option>
+                    <option value="za">Z-A</option>
+                  </select>
+                </td>
+
+                <td colSpan="2">
+                  <button
+                    onClick={this.searchBtnHandler}
+                    className="btn btn-info"
+                  >
+                    Search
+                  </button>
+                </td>
+              </tr>
+            </thead>
             <table className="table mt-4">
               <thead className="thead-light">
                 <tr>
@@ -306,7 +471,8 @@ class Admin extends React.Component {
                       value={this.state.addPrice}
                       onChange={this.inputHandler}
                       name="addPrice"
-                      type="number"
+                      placeholder="Price"
+                      type="text"
                       className="form-control"
                     />
                   </td>
@@ -389,10 +555,10 @@ class Admin extends React.Component {
   }
 }
 
-const mapStateToProps = state => {
+const mapStateToProps = (state) => {
   return {
-    userGlobal: state.user
-  }
-}
+    userGlobal: state.user,
+  };
+};
 
 export default connect(mapStateToProps)(Admin);

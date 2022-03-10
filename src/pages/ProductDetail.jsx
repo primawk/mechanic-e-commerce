@@ -8,7 +8,7 @@ import { Alert, Modal, Button } from "react-bootstrap";
 
 class ProductDetail extends React.Component {
   state = {
-    productData: {},
+    productData: {}, // specific product
     productNotFound: false,
     quantity: 1,
     addToCart: false,
@@ -23,9 +23,10 @@ class ProductDetail extends React.Component {
   };
 
   fetchProductData = () => {
+    // alert(window.location.search.substring(1));
     Axios.get(`${API_URL}/products`, {
       params: {
-        id: window.location.pathname.slice(-2),
+        id: window.location.search.substring(1),
       },
     })
       .then((result) => {
@@ -71,7 +72,7 @@ class ProductDetail extends React.Component {
       } else {
         // barang belum ada
         Axios.post(`${API_URL}/carts`, {
-          userId: this.props.userGlobal.id,
+          userId: this.props.userGlobal.id, // unique user
           productId: this.state.productData.id,
           price: this.state.productData.price,
           productName: this.state.productData.album,
@@ -102,7 +103,7 @@ class ProductDetail extends React.Component {
   render() {
     //Restriction page
     if (this.props.userGlobal.id == 0) {
-      return <Navigate to="/login" />; // redirect into a page with an alert
+      return <Navigate to="/login" />; // redirect into a page
     }
 
     return (

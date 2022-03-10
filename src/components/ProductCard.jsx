@@ -62,7 +62,7 @@ class ProductCard extends React.Component {
         <div className="mt-2">
           <div>
             <Link
-              to={`/product-detail/${this.props.productData.id}`}
+              to={`/product-detail?${this.props.productData.id}`}
               style={{ textDecoration: "none", color: "inherit" }}
             >
               <h6>{this.props.productData.album}</h6>
@@ -71,14 +71,14 @@ class ProductCard extends React.Component {
             <h6 className="text-muted">{this.props.productData.artist}</h6>
             <span className="text-muted">{this.idrFormatter()}</span>
           </div>
-          <div className="d-flex flex-row justify-content-end">
+          {/* <div className="d-flex flex-row justify-content-end">
             <button
               onClick={this.addToCartHandler}
               className="btn btn-primary mt-2"
             >
               Add to cart
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     );

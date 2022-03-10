@@ -2,6 +2,7 @@ import React from "react";
 import { API_URL } from "../constants/API";
 import Axios from "axios";
 import ProductCard from "../components/ProductCard";
+import "bootstrap/dist/css/bootstrap.css";
 import { Alert } from "react-bootstrap";
 
 class Home extends React.Component {
@@ -21,9 +22,9 @@ class Home extends React.Component {
     Axios.get(`${API_URL}/products`)
       .then((result) => {
         this.setState({
-          productList: result.data,
+          productList: result.data, // search feature
           maxPage: Math.ceil(result.data.length / this.state.itemPerPage),
-          filteredProductList: result.data,
+          filteredProductList: result.data, // search feature
         });
       })
       .catch(() => {
@@ -102,7 +103,7 @@ class Home extends React.Component {
           .includes(this.state.searchCategory.toLowerCase()) &&
         val.country
           .toLowerCase()
-          .includes(this.state.searchCountry.toLowerCase())
+          .includes(this.state.searchCountry.toLowerCase()) // bug
       );
     });
     this.setState({
@@ -116,7 +117,6 @@ class Home extends React.Component {
     this.fetchProducts();
   }
   render() {
-
     return (
       <div className="container mt-5">
         <div className="row">

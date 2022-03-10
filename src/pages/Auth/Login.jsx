@@ -17,17 +17,18 @@ class Login extends React.Component {
   };
 
   render() {
-    if (this.props.userGlobal.id) {
-      return <Navigate to="/" />
+    if (this.props.userGlobal.role == "user") {
+      return <Navigate to="/" />;
+    } //after login go to home page
+    else if (this.props.userGlobal.role == "admin") {
+      return <Navigate to="/admin" />; // admin login
     }
     return (
       <div className="container">
         <div className="row">
           <div className="col-12 text-center">
             <h1>Log in</h1>
-            <p className="lead">
-              Log in now and start digging!
-            </p>
+            <p className="lead">Log in now and start digging!</p>
           </div>
         </div>
         <div className="row mt-5">
@@ -61,7 +62,6 @@ class Login extends React.Component {
                   >
                     Login
                   </button>
-                  <Link to="/register">Or register</Link>
                 </div>
               </div>
             </div>

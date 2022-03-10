@@ -1,105 +1,77 @@
 import Axios from "axios";
 import { API_URL } from "../../constants/API";
-import { userConstants } from "../../_constants/user.constants";
-import { userService } from "../../_services/user.service";
-import { alertActions } from "./alert.actions";
-import { history } from "./history";
-import {
-  BrowserRouter,
-  Route,
-  Routes,
-  Navigate,
-  useNavigate,
-} from "react-router-dom";
 
-// export const register = ({ user }) => {
-//   return (dispatch) => {
-//     dispatch(request(user));
-
-//     userService.register(user).then(
-//       (user) => {
-//         dispatch(success());
-//         history.push("/login");
-//         dispatch(alertActions.success("Registration successful"));
-//       },
-//       (error) => {
-//         dispatch(failure(error));
-//         dispatch(alertActions.error(error));
-//       }
-//     );
-//   };
-//   function request(user) {
-//     return { type: userConstants.REGISTER_REQUEST, user };
-//   }
-//   function success(user) {
-//     return { type: userConstants.REGISTER_SUCCESS, user };
-//   }
-//   function failure(error) {
-//     return { type: userConstants.REGISTER_FAILURE, error };
-//   }
-// };
-
-export const registerUser = ({ fullName, username, email, password }) => {
-  // return (dispatch) => {
-  //   Axios.get(`${API_URL}/users`, {
-  //     params: {
-  //       username,
-  //     },
-  //   })
-  //   .then((result) => {
-  //     if (username == result.data.username) {
-  //       alert("username is already taken")
-  //     }
-  //   })
-
-  //   dispatch({
-  //     type: "USER_ERROR",
-  //     payload:
-  //       "It looks like you entered an incorrect password or username.",
-  //   });
-  // }
-
-  // }
-  if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
-    alert("input a valid email");
-  } else {
-    return (dispatch) => {
-      Axios.post(`${API_URL}/users`, {
-        fullName,
+export const register = ({ fullName, username, email, password }) => {
+  // register button
+  return (dispatch) => {
+    Axios.get(`${API_URL}/users`, {
+      params: {
         username,
-        email,
-        password,
-        role: "user",
-      })
-
-        .then((result) => {
-          dispatch({
-            type: "USER_LOGIN",
-            payload: result.data,
-          });
-          alert("Sucessfully signed up!");
-        })
-
-        .catch(() => {
-          alert("Failed to sign up");
+      },
+    }).then((result) => {
+      if (result.data.length) {
+        dispatch({
+          type: "USER_PROTECT",
+          payload: "Username is already exists.",
         });
-    };
-  }
+      } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(email)) {
+        dispatch({
+          type: "USER_PROTECT",
+          payload: "Please in input a valid email.",
+        });
+      } else {
+        Axios.get(`${API_URL}/users`, {
+          params: {
+            email,
+          },
+        }).then((result) => {
+          if (result.data.length) {
+            dispatch({
+              type: "USER_ERROR",
+              payload: "Email is already exists.",
+            });
+          } else {
+            Axios.post(`${API_URL}/users/regis`, {
+              fullName,
+              username,
+              email,
+              password,
+              role: "user",
+            })
+              .then((result) => {
+                delete result.data.password;
+                dispatch({
+                  type: "USER_LOGIN",
+                  payload: result.data,
+                });
+              })
+              .catch(() => {
+                alert("Gagal mendaftarkan user!");
+              });
+          }
+        });
+      }
+    });
+  };
 };
 
 export const loginUser = ({ username, password }) => {
   return (dispatch) => {
     Axios.get(`${API_URL}/users`, {
       params: {
-        username,
+        username, // looking for the same username
       },
     })
       .then((result) => {
         if (result.data.length) {
+          // looking for the same username
           if (password === result.data[0].password) {
+            // looking for the same password
             delete result.data[0].password;
+            window.location.reload(false); // Auto refresh
 
             localStorage.setItem(
+              // // set user data in local storage (temporary storage in the browser) result data has to be a string so use stringify()
               "userDataEmmerce",
               JSON.stringify(result.data[0])
             );
@@ -131,13 +103,14 @@ export const loginUser = ({ username, password }) => {
 };
 
 export const logoutUser = () => {
-  localStorage.removeItem("userDataEmmerce");
+  localStorage.removeItem("userDataEmmerce"); // remove user data
   return {
     type: "USER_LOGOUT",
   };
 };
 
 export const userKeepLogin = (userData) => {
+  // keep users logged in when the page is refreshed
   return (dispatch) => {
     Axios.get(`${API_URL}/users`, {
       params: {
@@ -145,9 +118,9 @@ export const userKeepLogin = (userData) => {
       },
     })
       .then((result) => {
-        delete result.data[0].password;
+        delete result.data[0].password; // user's privacy
 
-        localStorage.setItem("userDataEmmerce", JSON.stringify(result.data[0]));
+        localStorage.setItem("userDataEmmerce", JSON.stringify(result.data[0])); // set user data in local storage (temporary storage in the browser) result data has to be a string so use stringify()
 
         dispatch({
           type: "USER_LOGIN",

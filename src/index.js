@@ -7,9 +7,6 @@ import { Provider } from "react-redux";
 import { createStore, applyMiddleware } from "redux";
 import ReduxThunk from "redux-thunk";
 import rootReducer from "./redux/reducers";
-// setup fake backend
-import { configureFakeBackend } from './pages/Auth/fake-backend';
-configureFakeBackend();
 
 const store = createStore(rootReducer, applyMiddleware(ReduxThunk));
 
